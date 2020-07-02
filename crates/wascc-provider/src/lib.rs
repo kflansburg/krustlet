@@ -214,7 +214,6 @@ impl<S: Store + Send + Sync> Provider for WasccProvider<S> {
         let client = kube::Client::new(self.kubeconfig.clone());
         let volumes = Ref::volumes_from_pod(&self.volume_path, &pod, &client).await?;
         for container in pod.containers() {
-            let env = Self::env_vars(&container, &pod, &client).await;
             let volume_bindings: Vec<VolumeBinding> =
                 if let Some(volume_mounts) = container.volume_mounts.as_ref() {
                     volume_mounts
@@ -251,8 +250,9 @@ impl<S: Store + Send + Sync> Provider for WasccProvider<S> {
                 message: "No status has been received from the process".into(),
             });
             let host = self.host.clone();
+            let port = container.ports.as_ref().map(|ports| ports.get(0).map(|p| format!("{}", p.container_port))).flatten().unwrap_or_else(|| "8080".to_string());
             let http_result = tokio::task::spawn_blocking(move || {
-                wascc_run_http(host, module_data, env, volume_bindings, &lp, status_recv)
+                wascc_run_http(host, module_data, volume_bindings, &lp, status_recv, "10.16.34.10".to_string(), port)
             })
             .await?;
             match http_result {
@@ -437,13 +437,16 @@ struct VolumeBinding {
 fn wascc_run_http(
     host: Arc<Mutex<WasccHost>>,
     data: Vec<u8>,
-    env: EnvVars,
     volumes: Vec<VolumeBinding>,
     log_path: &Path,
     status_recv: Receiver<ContainerStatus>,
+    pod_host: String, 
+    port: String
 ) -> anyhow::Result<ContainerHandle<ActorHandle, LogHandleFactory>> {
     let mut caps: Vec<Capability> = Vec::new();
-
+    let mut env = HashMap::new();
+    env.insert("HOST".to_string(), pod_host);
+    env.insert("PORT".to_string(), port);
     caps.push(Capability {
         name: HTTP_CAPABILITY,
         binding: None,
@@ -537,7 +540,7 @@ fn wascc_run(
         .add_actor(load)
         .map_err(|e| anyhow::anyhow!("Error adding actor: {}", e))?;
     capabilities.iter().try_for_each(|cap| {
-        info!("configuring capability {}", cap.name);
+        println!("configuring capability {} with environment: {:?}.", cap.name, cap.env);
         host.lock()
             .unwrap()
             .bind_actor(&pk, cap.name, cap.binding.clone(), cap.env.clone())

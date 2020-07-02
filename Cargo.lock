@@ -3810,8 +3810,7 @@ dependencies = [
 [[package]]
 name = "wascc-httpsrv"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "366068997e1dc7fecb4c820406480a5dbe7e9b87121dd6a245666cd75eccfb54"
+source = "git+https://github.com/kflansburg/http-server-provider.git?branch=configure_host#f835dd40619a97c66848a1b52457b02500982fa0"
 dependencies = [
  "actix-multipart",
  "actix-rt",
