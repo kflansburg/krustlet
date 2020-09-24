@@ -9,6 +9,8 @@ pub(crate) mod starting;
 pub(crate) mod terminated;
 pub(crate) mod volume_mount;
 
+
+
 /// When called in a state's `next` function, exits the current state
 /// and transitions to the Error state.
 #[macro_export]
@@ -22,6 +24,18 @@ macro_rules! transition_to_error {
         return Transition::next($slf, error_state);
     }};
 }
+
+/// Match on result and `transition_to_error` if `Err`.
+#[macro_export]
+macro_rules! unwrap_result {
+    ($slf:ident, $res:expr) => {{
+        match $res {
+            Ok(t) => t,
+            Err(e) => transition_to_error!($slf, e) 
+        }
+    }};
+}
+
 
 /// When called in a state's `next` function, exits the state machine
 /// returns a fatal error to the kubelet.

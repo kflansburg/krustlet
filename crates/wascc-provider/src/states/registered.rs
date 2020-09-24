@@ -6,7 +6,7 @@ use kubelet::state::prelude::*;
 
 use super::error::Error;
 use super::image_pull::ImagePull;
-use crate::transition_to_error;
+use crate::{transition_to_error, unwrap_result};
 
 fn validate_pod_runnable(pod: &Pod) -> anyhow::Result<()> {
     if !pod.init_containers().is_empty() {
@@ -52,10 +52,7 @@ pub struct Registered;
 impl State<PodState> for Registered {
     async fn next(self: Box<Self>, _pod_state: &mut PodState, pod: &Pod) -> Transition<PodState> {
         info!("Pod added: {}.", pod.name());
-        match validate_pod_runnable(&pod) {
-            Ok(_) => (),
-            Err(e) => transition_to_error!(self, e),
-        }
+        unwrap_result!(self, validate_pod_runnable(&pod));
         Transition::next(self, ImagePull)
     }
 
