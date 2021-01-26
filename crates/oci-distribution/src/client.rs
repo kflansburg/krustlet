@@ -275,7 +275,10 @@ impl Client {
 
         // TODO: At some point in the future, we should support sending a secret to the
         // server for auth. This particular workflow is for read-only public auth.
-        debug!("Making authentication call to {}", realm);
+        debug!(
+            "Making authentication call to {} {} {:?}",
+            realm, scope, service
+        );
 
         let auth_res = self
             .client
@@ -753,7 +756,7 @@ impl ClientProtocol {
 /// A token granted during the OAuth2-like workflow for OCI registries.
 #[derive(serde::Deserialize, Default)]
 struct RegistryToken {
-    #[serde(alias = "access_token")]
+    // #[serde(alias = "access_token")]
     token: String,
 }
 
