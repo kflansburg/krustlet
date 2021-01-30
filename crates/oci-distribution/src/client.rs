@@ -119,11 +119,15 @@ impl Client {
     pub fn new(config: ClientConfig) -> Self {
         let client = if config.insecure {
             reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(10))
                 .danger_accept_invalid_hostnames(true)
                 .build()
                 .unwrap()
         } else {
-            reqwest::Client::new()
+            reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(10))
+                .build()
+                .unwrap()
         };
         Self {
             config,
