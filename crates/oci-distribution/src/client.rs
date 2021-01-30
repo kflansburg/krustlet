@@ -120,7 +120,7 @@ impl Client {
         let client = if config.insecure {
             reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(10))
-                .danger_accept_invalid_hostnames(true)
+                .danger_accept_invalid_certs(true)
                 .build()
                 .unwrap()
         } else {
