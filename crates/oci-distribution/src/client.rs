@@ -117,10 +117,18 @@ pub trait ClientConfigSource {
 impl Client {
     /// Create a new client with the supplied config
     pub fn new(config: ClientConfig) -> Self {
+        let client = if config.insecure {
+            reqwest::Client::builder()
+                .danger_accept_invalid_hostnames(true)
+                .build()
+                .unwrap()
+        } else {
+            reqwest::Client::new()
+        };
         Self {
             config,
             tokens: HashMap::new(),
-            client: reqwest::Client::new(),
+            client,
         }
     }
 
@@ -718,6 +726,8 @@ impl Client {
 pub struct ClientConfig {
     /// Which protocol the client should use
     pub protocol: ClientProtocol,
+    /// Do not verify TLS certificates
+    pub insecure: bool,
 }
 
 /// The protocol that the client should use to connect
