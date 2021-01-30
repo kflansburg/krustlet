@@ -244,13 +244,13 @@ impl Client {
         authentication: &RegistryAuth,
         operation: &RegistryOperation,
     ) -> anyhow::Result<()> {
-        debug!("Authorizing for image: {:?}", image);
         // The version request will tell us where to go.
         let url = format!(
             "{}://{}/v2/",
             self.config.protocol.scheme_for(image.registry()),
             image.registry()
         );
+        debug!("Authorizing for image: {:?} {:?}", image, &url);
         let res = self.client.get(&url).send().await?;
         let dist_hdr = match res.headers().get(reqwest::header::WWW_AUTHENTICATE) {
             Some(h) => h,
