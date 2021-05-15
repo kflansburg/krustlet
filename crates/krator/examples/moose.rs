@@ -418,6 +418,9 @@ struct Opt {
 fn init_logger(opt: &Opt) -> anyhow::Result<Option<opentelemetry_jaeger::Uninstall>> {
     // This isn't very DRY, but all of these combinations have different types,
     // and Boxing them doesn't seem to work.
+    let (layer, server) = console_subscriber::TasksLayer::new();
+    tokio::spawn(server.serve());
+
     let guard = if opt.json {
         let subscriber = tracing_subscriber::fmt()
             .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
@@ -439,11 +442,12 @@ fn init_logger(opt: &Opt) -> anyhow::Result<Option<opentelemetry_jaeger::Uninsta
         }
     } else {
         let subscriber = tracing_subscriber::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env().add_directive("tokio=trace".parse()?))
             .pretty()
             .finish();
+        use tracing_subscriber::layer::SubscriberExt;
+        let subscriber = subscriber.with(layer);
         if opt.jaeger {
-            use tracing_subscriber::layer::SubscriberExt;
             let (tracer, _uninstall) = opentelemetry_jaeger::new_pipeline()
                 .from_env()
                 .with_service_name("moose_operator")

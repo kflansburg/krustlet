@@ -5,6 +5,7 @@ use kubelet::store::oci::FileStore;
 use kubelet::Kubelet;
 use std::sync::Arc;
 use wasi_provider::WasiProvider;
+use tracing_subscriber::{prelude::*, fmt, EnvFilter};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
@@ -13,8 +14,16 @@ async fn main() -> anyhow::Result<()> {
     let config = Config::new_from_file_and_flags(env!("CARGO_PKG_VERSION"), None);
 
     // Initialize the logger
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
+    let (layer, server) = console_subscriber::TasksLayer::new();
+    let filter = EnvFilter::from_default_env().add_directive("tokio=trace".parse()?);
+    // tracing_subscriber::fmt()
+    //     .with_writer(std::io::stderr)
+    //     .init();
+    tracing_subscriber::registry()
+        // the `TasksLayer` can be used in combination with other `tracing` layers...
+        .with(fmt::layer())
+        .with(filter)
+        .with(layer)
         .init();
 
     let kubeconfig = kubelet::bootstrap(&config, &config.bootstrap_file, notify_bootstrap).await?;
@@ -24,6 +33,7 @@ async fn main() -> anyhow::Result<()> {
 
     let provider = WasiProvider::new(store, &config, kubeconfig.clone(), plugin_registry).await?;
     let kubelet = Kubelet::new(provider, kubeconfig, config).await?;
+    tokio::spawn(server.serve());
     kubelet.start().await
 }
 
