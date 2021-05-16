@@ -442,7 +442,10 @@ fn init_logger(opt: &Opt) -> anyhow::Result<Option<opentelemetry_jaeger::Uninsta
         }
     } else {
         let subscriber = tracing_subscriber::fmt()
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env().add_directive("tokio=trace".parse()?))
+            .with_env_filter(
+                tracing_subscriber::EnvFilter::from_default_env()
+                    .add_directive("tokio=trace".parse()?),
+            )
             .pretty()
             .finish();
         use tracing_subscriber::layer::SubscriberExt;

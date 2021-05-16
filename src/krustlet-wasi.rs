@@ -4,8 +4,8 @@ use kubelet::store::composite::ComposableStore;
 use kubelet::store::oci::FileStore;
 use kubelet::Kubelet;
 use std::sync::Arc;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use wasi_provider::WasiProvider;
-use tracing_subscriber::{prelude::*, fmt, EnvFilter};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
